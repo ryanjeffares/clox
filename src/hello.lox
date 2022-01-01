@@ -1,0 +1,9 @@
+var global = 10;
+final g = "I am constant";
+
+{
+  final outer = "Hello world!";
+  print outer;
+}
+
+print global;
