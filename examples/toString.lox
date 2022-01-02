@@ -1,0 +1,8 @@
+final a = 10;
+print toString(a);
+
+final b = 1 / 3;
+print toString(b);
+
+fun f() {}
+print toString(f);  // runtime error

@@ -11,14 +11,13 @@
 static void repl() {
     char line[1024];
     for (;;) {
-	printf("> ");
+        printf("> ");
+        if (!fgets(line, sizeof(line), stdin)) {
+            printf("\n");
+            break;
+        }
 
-	if (!fgets(line, sizeof(line), stdin)) {
-	    printf("\n");
-	    break;
-	}
-
-	interpret(line);
+        interpret(line, true);
     }
 }
 
@@ -53,12 +52,16 @@ static char* readFile(const char* path) {
 
 static void runFile(const char* path) {
     char* source = readFile(path);
-    InterpretResult result = interpret(source);
+    InterpretResult result = interpret(source, false);
     free(source);
 
     switch (result) {
-        case INTERPRET_COMPILE_ERROR: exit(65);
-        case INTERPRET_RUNTIME_ERROR: exit(70);
+        case INTERPRET_COMPILE_ERROR:
+            fprintf(stderr, "Interpreter Compiler Error.");
+            exit(65);
+        case INTERPRET_RUNTIME_ERROR: 
+            fprintf(stderr, "Interpreter Runtime Error.");
+            exit(70);
     }
 }
 

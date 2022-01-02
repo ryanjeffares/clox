@@ -1,0 +1,11 @@
+fun pow(base, exponent) {
+  var res = base;
+  for (var i = 1; i < exponent; i = i + 1) {
+    res = res * base;
+  }
+  return res;
+}
+
+print pow(2, 2);
+print pow(3, 3);
+print pow(5, 10);
