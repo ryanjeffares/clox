@@ -29,7 +29,9 @@ static Entry* findEntry(Entry* entries, int capacity, ObjString* key) {
             if (IS_NIL(entry->value)) {
                 return tombstone != NULL ? tombstone : entry;
             } else {
-                if (tombstone == NULL) tombstone = entry;                
+                if (tombstone == NULL) {
+                    tombstone = entry;
+                }
             }
         } else if (entry->key == key) {
             return entry;
@@ -82,7 +84,7 @@ bool tableHasKey(Table* table, ObjString* key) {
     return findEntry(table->entries, table->capacity, key)->key != NULL;
 }
 
-bool tableSet(Table *table, ObjString *key, Value value, bool makeFinal) {
+bool tableSet(Table *table, ObjString *key, Value value) {
     if (table->count + 1 > table->capacity * TABLE_MAX_LOAD) {
         int capacity = GROW_CAPACITY(table->capacity);
         adjustCapacity(table, capacity);
@@ -97,8 +99,26 @@ bool tableSet(Table *table, ObjString *key, Value value, bool makeFinal) {
 
     entry->key = key;       
     entry->value = value;
-    entry->value.isFinal = makeFinal;
     return isNewKey;
+}
+
+bool tableSetFinal(Table* table, ObjString* key, Value value) {
+    if (table->count + 1 > table->capacity * TABLE_MAX_LOAD) {
+        int capacity = GROW_CAPACITY(table->capacity);
+        adjustCapacity(table, capacity);
+    }
+
+    Entry* entry = findEntry(table->entries, table->capacity, key);
+    bool isNewKey = entry->key == NULL;
+
+    if (isNewKey && IS_NIL(entry->value)) {
+        table->count++;
+    }
+
+    entry->key = key;       
+    entry->value = value;
+    entry->value.isFinal = true;
+    return isNewKey;   
 }
 
 bool tableUpdate(Table* table, ObjString* key, Value value) {
@@ -123,7 +143,7 @@ bool tableDelete(Table* table, ObjString* key) {
     }
 
     entry->key = NULL;
-    entry->value = BOOL_VAL(true, false);
+    entry->value = BOOL_VAL(true);
     return true;
 }
 
@@ -131,7 +151,7 @@ void tableAddAll(Table* from, Table* to) {
     for (int i = 0; i < from->capacity; i++) {
         Entry* entry = &from->entries[i];
         if (entry->key != NULL) {
-            tableSet(to, entry->key, entry->value, entry->value.isFinal);
+            tableSet(to, entry->key, entry->value);
         }
     }
 }

@@ -1,0 +1,18 @@
+var hello = "Hello";
+var world = " World!";
+
+print hello + world;
+
+final global = 100;
+
+{
+  final outer = 5;
+  {
+    var inner = 10;
+    print inner * outer;
+  }
+//  inner = global;  // should be compiler error
+//  outer = 2;    // should be compiler error
+}
+
+//global = 50;  // should be compiler erro

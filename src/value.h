@@ -32,10 +32,10 @@ typedef struct {
 #define AS_NUMBER(value)    ((value).as.number)
 #define AS_OBJ(value)       ((value).as.obj)
 
-#define BOOL_VAL(value, isFinal)    ((Value){VAL_BOOL, isFinal,  {.boolean = value}})
-#define NIL_VAL                     ((Value){VAL_NIL, false,  {.number = 0}})
-#define NUMBER_VAL(value, isFinal)  ((Value){VAL_NUMBER, isFinal,  {.number = value}})
-#define OBJ_VAL(object, isFinal)    ((Value){VAL_OBJ, isFinal,  {.obj = (Obj*)object}})
+#define BOOL_VAL(value)    ((Value){VAL_BOOL, false,  {.boolean = value}})
+#define NIL_VAL            ((Value){VAL_NIL, false,  {.number = 0}})
+#define NUMBER_VAL(value)  ((Value){VAL_NUMBER, false,  {.number = value}})
+#define OBJ_VAL(object)    ((Value){VAL_OBJ, false,  {.obj = (Obj*)object}})
 
 typedef struct 
 {

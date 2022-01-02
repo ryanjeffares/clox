@@ -19,7 +19,8 @@ void initTable(Table* table);
 void freeTable(Table* table);
 bool tableHasKey(Table* table, ObjString* key);
 bool tableGet(Table* table, ObjString* key, Value* outValue);
-bool tableSet(Table* table, ObjString* key, Value value, bool makeFinal);
+bool tableSet(Table* table, ObjString* key, Value value);
+bool tableSetFinal(Table* table, ObjString* key, Value value);
 // only to be called when positive the table contains given key, i.e. after tableHasKey() has returned true
 bool tableUpdate(Table* table, ObjString* key, Value value);
 bool tableDelete(Table* table, ObjString* key);
