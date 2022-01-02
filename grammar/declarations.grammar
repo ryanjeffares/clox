@@ -1,0 +1,14 @@
+declaration   -> classDecl
+              |  funDecl
+              |  varDecl
+              |  finalDecl
+              |  statement
+
+classDecl     -> "class" IDENTIFIER ( "<" IDENTIFIER )?
+                 "{" function* "}" ;
+
+funDecl       -> "fun" function ;
+
+varDecl       -> "var" IDENTIFIER ( "=" expression )? ";" ;
+
+finalDecl     -> "final" IDENTIFIER "=" expression ";" ;
