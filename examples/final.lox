@@ -1,0 +1,7 @@
+final fun addOne(n) {
+  return n + 1;
+}
+
+final fun addTwo(n) {
+  return n + 1;
+}
