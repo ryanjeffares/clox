@@ -38,7 +38,13 @@ typedef struct {
     Token name;
     int depth;
     bool final;
+    bool isCaptured;
 } Local;
+
+typedef struct {
+    uint8_t index;
+    bool isLocal;
+} Upvalue;
 
 typedef enum {
     TYPE_FUNCTION,
@@ -58,6 +64,7 @@ typedef struct {
 
     Local locals[UINT8_COUNT];
     int localCount;
+    Upvalue upvalues[UINT8_COUNT];
     int scopeDepth;
     bool final;
 } Compiler;
@@ -209,6 +216,7 @@ static void initCompiler(Compiler*  compiler, FunctionType type) {
 
     Local* local = &current->locals[current->localCount++];
     local->depth = 0;
+    local->isCaptured = false;
     local->name.start = "";
     local->name.length = 0;
 }
@@ -235,15 +243,11 @@ static void endScope() {
     current->scopeDepth--;
     while (current->localCount > 0 && 
             current->locals[current->localCount - 1].depth > current->scopeDepth) {
-#if 0
-        Local* local = &current->locals[current->localCount - 1];
-        printf(local->final ? "Local final: " : "Local var: ");
-        for (int i = 0; i < local->name.length; i++) {
-            printf("%c", local->name.start[i]);
+        if (current->locals[current->localCount - 1].isCaptured) {
+            emitByte(OP_CLOSE_UPVALUE);
+        } else {
+            emitByte(OP_POP);
         }
-        printf("\n");
-#endif
-        emitByte(OP_POP);
         current->localCount--;
     }
 }
@@ -297,6 +301,19 @@ static uint8_t identifierConstant(Token* name) {
     return makeConstant(OBJ_VAL(copyString(name->start, name->length)));
 }
 
+static void addLocal(Token name, bool isFinal) {
+    if (current->localCount == UINT8_COUNT) {
+        error("Too many local variables in function, max 256.");
+        return;
+    }
+
+    Local* local = &current->locals[current->localCount++];
+    local->name = name;
+    local->depth = -1;
+    local->final = isFinal;
+    local->isCaptured = false;
+}
+
 static int resolveLocal(Compiler* compiler, Token* name) {
     for (int i = compiler->localCount - 1; i >= 0; i--) {
         Local* local = &compiler->locals[i];        
@@ -311,16 +328,45 @@ static int resolveLocal(Compiler* compiler, Token* name) {
     return -1;
 }
 
-static void addLocal(Token name, bool isFinal) {
-    if (current->localCount == UINT8_COUNT) {
-        error("Too many local variables in function, max 256.");
-        return;
+// TODO: handle finals
+static int addUpvalue(Compiler* compiler, uint8_t index, bool isLocal) {
+    int upvalueCount = compiler->function->upvalueCount;
+
+    for (int i = 0; i < upvalueCount; i++) {
+        Upvalue* upvalue = &compiler->upvalues[i];
+        if (upvalue->index == index && upvalue->isLocal == isLocal) {
+            return i;
+        }
     }
 
-    Local* local = &current->locals[current->localCount++];
-    local->name = name;
-    local->depth = -1;
-    local->final = isFinal;
+    if (upvalueCount == UINT8_COUNT) {
+        error("Too many closure variables in function.");
+        return 0;
+    }
+
+    compiler->upvalues[upvalueCount].isLocal = isLocal;
+    compiler->upvalues[upvalueCount].index = index;
+    return compiler->function->upvalueCount++;
+}
+
+static int resolveUpvalue(Compiler* compiler, Token* name) {
+    if (compiler->enclosing == NULL) {
+        return -1;
+    }
+
+    int local = resolveLocal((Compiler*)compiler->enclosing, name);
+    if (local != -1) {
+        Compiler* enclosing = (Compiler*)compiler->enclosing;
+        enclosing->locals[local].isCaptured = true;
+        return addUpvalue(compiler, (uint8_t)local, true);
+    }
+
+    int upvalue = resolveUpvalue((Compiler*)compiler->enclosing, name);
+    if (upvalue != -1) {
+        return addUpvalue(compiler, (uint8_t)upvalue, false);
+    }
+
+    return -1;
 }
 
 static void declareVariable(bool isFinal) {
@@ -415,21 +461,22 @@ static void function(FunctionType type) {
             if (current->function->arity > 255) {
                 errorAtCurrent("Can't have more than 255 parameters.");
             }
-            // if (check(TOKEN_FINAL)) {
-            //     consume(TOKEN_FINAL, "");  // consume 'final'
-            //     uint8_t constant = parseVariable("Expected parameter name.", true);
-            // } else {
             uint8_t constant = parseVariable("Expected parameter name.", false);
             defineVariable(constant, false);
-            // }
         } while (match(TOKEN_COMMA));
     }
+
     consume(TOKEN_RIGHT_PAREN, "Expected ')' after parameters.");
     consume(TOKEN_LEFT_BRACE, "Expected '{' before function body.");
     block();
 
     ObjFunction* function = endCompiler();
-    emitBytes(OP_CONSTANT, makeConstant(OBJ_VAL(function)));
+    emitBytes(OP_CLOSURE, makeConstant(OBJ_VAL(function)));
+
+    for (int i = 0; i < function->upvalueCount; i++) {
+        emitByte(compiler.upvalues[i].isLocal ? 1 : 0);
+        emitByte(compiler.upvalues[i].index);
+    }
 }
 
 static void funDeclaration() {
@@ -668,6 +715,9 @@ static void namedVariable(Token name, bool canAssign) {
     if (arg != -1) {
         getOp = OP_GET_LOCAL;
         setOp = OP_SET_LOCAL;
+    } else if ((arg = resolveUpvalue(current, &name)) != -1) {
+        getOp = OP_GET_UPVALUE;
+        setOp = OP_SET_UPVALUE;
     } else {
         arg = identifierConstant(&name);
         getOp = OP_GET_GLOBAL;

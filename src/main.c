@@ -17,7 +17,7 @@ static void repl() {
             break;
         }
 
-        interpret(line, true);
+        interpret(line, true, false);
     }
 }
 
@@ -50,9 +50,9 @@ static char* readFile(const char* path) {
     return buffer;
 }
 
-static void runFile(const char* path) {
+static void runFile(const char* path, bool verbose) {
     char* source = readFile(path);
-    InterpretResult result = interpret(source, false);
+    InterpretResult result = interpret(source, false, verbose);
     free(source);
 
     switch (result) {
@@ -74,10 +74,15 @@ int main(int argc, const char* argv[])
             repl();
             break;
         case 2:
-            runFile(argv[1]);
+            runFile(argv[1], false);
             break;
+        case 3:
+            if (strcmp(argv[2], "--verbose") == 0 || strcmp(argv[2], "-v") == 0) {
+                runFile(argv[1], true);
+                break;
+            }
         default:
-            fprintf(stderr, "Usage: clox [path]\n");
+            fprintf(stderr, "Usage: clox [path [--verbose]]\n");
             exit(64);
     }
 

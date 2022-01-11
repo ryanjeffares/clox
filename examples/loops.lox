@@ -1,0 +1,22 @@
+final start = clock();
+
+for (var i = 0; i < 10000; i = i + 1) {
+  print i;
+}
+
+final end = clock();
+
+print "Loop to 10k with printing took:";
+print end - start;
+
+final start2 = clock();
+
+for (var i = 0; i < 10000; i = i + 1) {
+  
+}
+
+final end2 = clock();
+
+print "Loop to 10k without printing took:";
+print end2 - start2;
+
