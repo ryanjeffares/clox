@@ -8,6 +8,12 @@ fun fib(n) {
 
 for (var n = 1; n < 30; n = n + 1) {
   final start = clock();
-  print "fib(" + n + ") = " + fib(n);
-  print "Took " + (clock() - start) + " seconds.";
+  final res = fib(n);
+  final end = clock();
+  
+  print n;
+  print res;
+  print (end - start);
+
+  print "===";
 }

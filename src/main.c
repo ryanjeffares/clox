@@ -57,10 +57,10 @@ static void runFile(const char* path, bool verbose) {
 
     switch (result) {
         case INTERPRET_COMPILE_ERROR:
-            fprintf(stderr, "Interpreter Compiler Error.");
+            fprintf(stderr, "Interpreter Compiler Error.\n");
             exit(65);
         case INTERPRET_RUNTIME_ERROR: 
-            fprintf(stderr, "Interpreter Runtime Error.");
+            fprintf(stderr, "Interpreter Runtime Error.\n");
             exit(70);
     }
 }

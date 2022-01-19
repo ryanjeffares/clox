@@ -57,6 +57,14 @@ static void defineNative(const char* name, NativeFn function) {
 void initVM() {
     resetStack();
     vm.objects = NULL;
+
+    vm.bytesAllocated = 0;
+    vm.nextGC = 1024 * 1024;
+
+    vm.greyCount = 0;
+    vm.greyCapacity = 0;
+    vm.greyStack = NULL;
+
     initTable(&vm.globals);
     initTable(&vm.strings);
 
@@ -176,8 +184,8 @@ static bool isFalsey(Value value) {
 }
 
 static void concatenate() {
-    ObjString* b = AS_STRING(pop());
-    ObjString* a = AS_STRING(pop());
+    ObjString* b = AS_STRING(peek(0));
+    ObjString* a = AS_STRING(peek(1));
 
     int length = a->length + b->length;
     char* chars = ALLOCATE(char, length + 1);
@@ -186,6 +194,8 @@ static void concatenate() {
     chars[length] = '\0';
 
     ObjString* result = takeString(chars, length);
+    pop();
+    pop();
     push(OBJ_VAL(result));
 }
 
@@ -201,15 +211,15 @@ static InterpretResult run(bool repl) {
 
 #define READ_STRING() AS_STRING(READ_CONSTANT())
 
-#define BINARY_OP(valueType, op) \
-    do { \
-        if (!IS_NUMBER(peek(0)) || !IS_NUMBER(peek(1))) { \
+#define BINARY_OP(valueType, op)                            \
+    do {                                                    \
+        if (!IS_NUMBER(peek(0)) || !IS_NUMBER(peek(1))) {   \
             runtimeError("Both operands must be numbers."); \
-            return INTERPRET_RUNTIME_ERROR; \
-        } \
-        double b = AS_NUMBER(pop()); \
-        double a = AS_NUMBER(pop()); \
-        push(valueType(a op b)); \
+            return INTERPRET_RUNTIME_ERROR;                 \
+        }                                                   \
+        double b = AS_NUMBER(pop());                        \
+        double a = AS_NUMBER(pop());                        \
+        push(valueType(a op b));                            \
     } while (false)
 
     for (;;) {
@@ -384,7 +394,7 @@ static InterpretResult run(bool repl) {
                 if (vm.frameCount == 0) {
                     pop();
                     if (!repl) {
-                        printf("Program exited with code %d", (int)result.as.number);
+                        printf("Program exited with code %d.\n", (int)result.as.number);
                     }
                     return INTERPRET_OK;
                 }
@@ -395,7 +405,7 @@ static InterpretResult run(bool repl) {
                 break;
             }
             default: 
-                CLOX_ASSERTFALSE("Unreachable code.");
+                CLOX_ASSERTFALSE("Unreachable code.\n");
         }
     }
 
