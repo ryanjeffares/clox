@@ -6,7 +6,7 @@ When I have finished the book I will add documentation for the additional featur
 
 To build, simply:
 
-```
+```bash
 mkdir build
 cd build
 cmake ..

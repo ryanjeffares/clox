@@ -27,9 +27,9 @@ Value numberToStringNative(int argCount, NativeErrorCode* outStatus, Value* args
     char s[50];
     double n = args[0].as.number;
     if (trunc(n) == n) {
-        sprintf_s(s, 50, "%i", (int)n);
+        sprintf(s, "%i", (int)n);
     } else {
-        sprintf_s(s, 50, "%f", n);
+        sprintf(s, "%f", n);
     }
     ObjString* string = copyString(s, 10);
     *outStatus = ERR_NONE;
