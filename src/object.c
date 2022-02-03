@@ -24,7 +24,7 @@ static Obj* allocateObject(size_t size, ObjType type) {
     return object;
 }
 
-ObjClass* newlass(ObjString* name) {
+ObjClass* newClass(ObjString* name) {
     ObjClass* cls = ALLOCATE_OBJ(ObjClass, OBJ_CLASS);
     cls->name = name;
     return cls;
@@ -63,6 +63,13 @@ ObjFunction* newFunction() {
     function->name = NULL;
     initChunk(&function->chunk);
     return function;
+}
+
+ObjInstance* newInstance(ObjClass* cls) {
+    ObjInstance* instance = ALLOCATE_OBJ(ObjInstance, OBJ_INSTANCE);
+    instance->cls = cls;
+    initTable(&instance->fields);
+    return instance;
 }
 
 ObjNative* newNative(NativeFn function) {
@@ -133,6 +140,9 @@ void printObject(Value value) {
             break;
         case OBJ_FUNCTION:
             printFunction(AS_FUNCTION(value));
+            break;
+        case OBJ_INSTANCE:
+            printf("%s instance", AS_INSTANCE(value)->cls->name->chars);
             break;
         case OBJ_NATIVE:
             printf("<native fn>");
